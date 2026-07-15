@@ -1,0 +1,25 @@
+meta {
+  name: mapping-get-by-connection
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/psama/mapping/bruno-test-map
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("sessionToken") && !bru.getEnvVar("sessionToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+assert {
+  res.status: eq 200
+}

@@ -1,0 +1,26 @@
+meta {
+  name: study-access-create
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/psama/studyAccess
+  body: text
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+body:text {
+  bruno-test-study
+}
+
+script:pre-request {
+  // Intentionally always skipped: POST /psama/studyAccess creates a role,
+  // privileges, and access rules with no single undo endpoint. Run manually
+  // only, then clean up via the role/privilege/accessRule admin endpoints.
+  bru.runner.skipRequest();
+}

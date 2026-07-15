@@ -1,0 +1,29 @@
+meta {
+  name: connection-update
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/psama/connection
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("sessionToken") && !bru.getEnvVar("sessionToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+body:json {
+  [ { "uuid": "{{brunoConnectionUuid}}", "label": "bruno-test-connection-updated", "id": "bruno-test", "subPrefix": "bruno-test|", "requiredFields": "[{\"label\":\"Email\",\"id\":\"email\"}]" } ]
+}
+
+assert {
+  res.status: eq 200
+}

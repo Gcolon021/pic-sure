@@ -1,0 +1,25 @@
+meta {
+  name: privilege-delete
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/psama/privilege/{{brunoPrivilegeUuid}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("sessionToken") && !bru.getEnvVar("sessionToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+assert {
+  res.status: eq 200
+}

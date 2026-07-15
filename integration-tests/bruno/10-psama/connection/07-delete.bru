@@ -1,0 +1,25 @@
+meta {
+  name: connection-delete
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/psama/connection/bruno-test
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("sessionToken") && !bru.getEnvVar("sessionToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+assert {
+  res.status: eq 200
+}

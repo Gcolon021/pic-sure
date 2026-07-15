@@ -1,0 +1,29 @@
+meta {
+  name: application-update
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/psama/application
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("sessionToken") && !bru.getEnvVar("sessionToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+body:json {
+  [ { "uuid": "{{brunoAppUuid}}", "name": "bruno-test-app", "description": "updated by bruno integration suite", "url": "https://example.org", "enable": true } ]
+}
+
+assert {
+  res.status: eq 200
+}

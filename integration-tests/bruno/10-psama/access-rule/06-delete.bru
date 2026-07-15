@@ -1,0 +1,25 @@
+meta {
+  name: access-rule-delete
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/psama/accessRule/{{brunoAccessRuleUuid}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("sessionToken") && !bru.getEnvVar("sessionToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+assert {
+  res.status: eq 200
+}

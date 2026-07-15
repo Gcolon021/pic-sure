@@ -1,0 +1,25 @@
+meta {
+  name: application-refresh-token
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/psama/application/refreshToken/{{brunoAppUuid}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("sessionToken") && !bru.getEnvVar("sessionToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+assert {
+  res.status: eq 200
+}

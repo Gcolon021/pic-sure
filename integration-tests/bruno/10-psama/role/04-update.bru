@@ -1,0 +1,29 @@
+meta {
+  name: role-update
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/psama/role
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("sessionToken") && !bru.getEnvVar("sessionToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+body:json {
+  [ { "uuid": "{{brunoRoleUuid}}", "name": "bruno-test-role", "description": "updated by bruno integration suite" } ]
+}
+
+assert {
+  res.status: eq 200
+}

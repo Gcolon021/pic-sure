@@ -1,0 +1,29 @@
+meta {
+  name: access-rule-update
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/psama/accessRule
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("sessionToken") && !bru.getEnvVar("sessionToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+body:json {
+  [ { "uuid": "{{brunoAccessRuleUuid}}", "name": "bruno-test-access-rule", "description": "updated by bruno integration suite", "rule": "$.query", "type": 11, "value": null, "checkMapKeyOnly": false, "checkMapNode": false, "evaluateOnlyByGates": false, "gateAnyRelation": false } ]
+}
+
+assert {
+  res.status: eq 200
+}

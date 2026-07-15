@@ -1,0 +1,25 @@
+meta {
+  name: access-rule-get
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/psama/accessRule/{{brunoAccessRuleUuid}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("sessionToken") && !bru.getEnvVar("sessionToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+assert {
+  res.status: eq 200
+}

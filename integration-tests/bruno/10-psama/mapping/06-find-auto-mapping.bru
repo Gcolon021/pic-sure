@@ -1,0 +1,39 @@
+meta {
+  name: mapping-find-auto-mapping
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/psama/mapping
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("sessionToken") && !bru.getEnvVar("sessionToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:post-response {
+  // Connection creation (ConnectionWebService.addConnection) auto-creates a
+  // default UserMetadataMapping row for every new connection, separate from
+  // the explicit mapping created in 02-create.bru (already deleted by
+  // 05-delete.bru). That auto-created row must also be deleted before the
+  // connection itself can be deleted (409 otherwise).
+  const body = res.body && res.body.content !== undefined ? res.body.content : res.body;
+  const list = Array.isArray(body) ? body : [];
+  const auto = list.find((m) => m.connection && m.connection.id === "bruno-test-map");
+  if (auto) {
+    bru.setVar("brunoMapAutoMappingUuid", auto.uuid);
+  }
+}

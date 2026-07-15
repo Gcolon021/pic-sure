@@ -1,0 +1,35 @@
+meta {
+  name: mapping-create
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/psama/mapping
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("sessionToken") && !bru.getEnvVar("sessionToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+body:json {
+  [ { "connection": { "id": "bruno-test-map" }, "generalMetadataJsonPath": "$.email", "auth0MetadataJsonPath": "$.email" } ]
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:post-response {
+  const body = res.body && res.body.content !== undefined ? res.body.content : res.body;
+  const item = Array.isArray(body) ? body[0] : body;
+  bru.setVar("brunoMappingUuid", item.uuid);
+}

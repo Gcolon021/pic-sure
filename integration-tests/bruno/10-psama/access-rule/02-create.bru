@@ -1,0 +1,35 @@
+meta {
+  name: access-rule-create
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/psama/accessRule
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("sessionToken") && !bru.getEnvVar("sessionToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+body:json {
+  [ { "name": "bruno-test-access-rule", "description": "created by bruno integration suite", "rule": "$.query", "type": 11, "value": null, "checkMapKeyOnly": false, "checkMapNode": false, "evaluateOnlyByGates": false, "gateAnyRelation": false } ]
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:post-response {
+  const body = res.body && res.body.content !== undefined ? res.body.content : res.body;
+  const item = Array.isArray(body) ? body[0] : body;
+  bru.setVar("brunoAccessRuleUuid", item.uuid);
+}

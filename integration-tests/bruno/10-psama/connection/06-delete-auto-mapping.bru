@@ -1,0 +1,28 @@
+meta {
+  name: connection-delete-auto-mapping
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/psama/mapping/{{brunoConnAutoMappingUuid}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("brunoConnAutoMappingUuid")) {
+    bru.runner.skipRequest();
+  }
+  if (!bru.getVar("sessionToken") && !bru.getEnvVar("sessionToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+assert {
+  res.status: eq 200
+}
