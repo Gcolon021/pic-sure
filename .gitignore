@@ -38,3 +38,4 @@ george_development_notes.md
 fable-master-handoff.md
 
 integration-tests/bruno/.env
+integration-tests/bruno/results.json
