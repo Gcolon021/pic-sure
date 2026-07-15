@@ -1,0 +1,21 @@
+meta {
+  name: 03-user-token-on-admin
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/psama/role
+  body: json
+  auth: inherit
+}
+
+body:json {
+  [ { "name": "bruno-test-should-not-exist", "description": "must be rejected" } ]
+}
+
+tests {
+  test("long-term/non-admin token is rejected on psama admin endpoint", function () {
+    expect([401, 403]).to.include(res.getStatus());
+  });
+}

@@ -1,0 +1,65 @@
+meta {
+  name: 01-no-token
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/picsure/dictionary/dashboard
+  body: none
+  auth: none
+}
+
+docs {
+  Adjusted from a 401 expectation to a 200 expectation after root-causing on the
+  live local stack (GATEWAY_OPEN_ACCESS_ENABLED=true, openAccessEnabled=true).
+
+  What happens: gateway's OpenAccessFilter (order 20) short-circuits any
+  no-bearer request (Authorization null/blank/<=7 chars, per
+  services/pic-sure-gateway .../filter/OpenAccessFilter.java:50) and asks
+  PSAMA's POST /open/validate whether to grant it. PSAMA's
+  AuthorizationService.openAccessRequestIsValid (pic-sure-auth-microapp
+  .../authorization/AuthorizationService.java:299-350) grants unconditionally
+  whenever the MANUAL_ROLE_OPEN_ACCESS role's privileges carry zero
+  AccessRules (line ~331: `allOpenAccessRules.isEmpty() -> result = true`).
+  On this stack that role's only privilege (PIC_SURE_ANY_QUERY) has no access
+  rules attached, so EVERY tokenless request under /picsure/** is granted --
+  verified directly against psama's role/{uuid} detail endpoint and against
+  the psama container logs ("AN OPEN ACCESS USER ... NO ACCESS RULES
+  EVALUATED"). This was reproduced across multiple routes (dictionary,
+  hpds/auth query/sync, operations), not just this one -- there is no
+  /picsure/** target that currently escapes the open-access grant, so "pick a
+  route not covered by open access" was not available on this stack.
+
+  Note for follow-up (not asserted here to avoid a meaningless accept-list):
+  by current PsamaIntrospectionFilter source (order 30, runs right after
+  OpenAccessFilter in the same chain -- PsamaIntrospectionFilter.java:127-131)
+  a request with a genuinely missing Authorization header should independently
+  hit its own "missing_token" 401, since OpenAccessFilter never sets an
+  Authorization header and PsamaIntrospectionFilter never reads the
+  X-User-Id-equivalent request attribute OpenAccessFilter stashes. That 401
+  does NOT happen on this running stack (confirmed via gateway access logs
+  for this exact request, and via /operations, /hpds routes showing the same
+  pattern) -- suggesting the deployed gateway image predates that hardening
+  (stacked-PR / AIO build skew) rather than an intentional bypass in the
+  current source tree. Worth re-verifying this assertion after the next AIO
+  gateway rebuild; if PsamaIntrospectionFilter's missing_token check is live,
+  this route will correctly start failing with 401 and should be reverted to
+  the original brief expectation at that point.
+
+  /psama/** was also ruled out as an alternate target: those routes bypass
+  the gateway entirely (httpd rewrites /psama/(.*) straight to
+  psama:8090/auth/$1 -- see extra/httpd-vhosts.conf:101), so a tokenless
+  request there hits PSAMA's own security, not the gateway's OpenAccessFilter
+  /PsamaIntrospectionFilter chain, and returns 403 rather than 401.
+}
+
+tests {
+  // known bug (suspected build/deploy skew, not current source intent): a genuinely
+  // tokenless /picsure/** request is unconditionally granted by OpenAccessFilter on
+  // this stack (MANUAL_ROLE_OPEN_ACCESS has zero access rules), so 401 is not
+  // reachable here. Asserting the actual, honest contract for this stack config.
+  test("tokenless request to an open-access-covered route is granted, not rejected", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

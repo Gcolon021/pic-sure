@@ -1,0 +1,21 @@
+meta {
+  name: 04-malformed-query
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/picsure/hpds/auth/v3/query/sync
+  body: json
+  auth: inherit
+}
+
+body:json {
+  { "query": "this-is-not-a-query-object" }
+}
+
+tests {
+  test("malformed query is rejected with a client/server error", function () {
+    expect(res.getStatus()).to.be.at.least(400);
+  });
+}
