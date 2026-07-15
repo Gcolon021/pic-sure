@@ -1,0 +1,39 @@
+meta {
+  name: 03-distributions
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/picsure/visualization/distributions
+  body: json
+  auth: inherit
+}
+
+script:pre-request {
+  const p = bru.getEnvVar("testConceptPath") || bru.getVar("dictConceptPath") || bru.getVar("discoveredConceptPath");
+  if (!p) { bru.runner.skipRequest(); }
+  // JSON-escape backslashes/quotes: concept paths look like \Nhanes\SUBJECT_ID\ and are
+  // interpolated inside a body:json string literal (same approach as 20-hpds/05-query-submit.bru).
+  bru.setVar("vizConceptPath", JSON.stringify(String(p)).slice(1, -1));
+}
+
+body:json {
+  {
+    "query": {
+      "select": [],
+      "authorizationFilters": [],
+      "phenotypicClause": {
+        "phenotypicFilterType": "REQUIRED",
+        "conceptPath": "{{vizConceptPath}}",
+        "not": false
+      },
+      "genomicFilters": [],
+      "expectedResultType": "COUNT"
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+}
