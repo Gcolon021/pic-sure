@@ -1,0 +1,15 @@
+meta {
+  name: user-me-querytemplate
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/psama/user/me/queryTemplate
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+}

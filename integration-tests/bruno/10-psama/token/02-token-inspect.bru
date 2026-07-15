@@ -1,0 +1,35 @@
+meta {
+  name: token-inspect
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/psama/token/inspect
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{applicationToken}}
+}
+
+script:pre-request {
+  if (!bru.getEnvVar("applicationToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+body:json {
+  { "token": "{{userToken}}", "request": { "Target Service": "/psama/token/inspect", "query": {} } }
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("token is active", function () {
+    expect(res.getBody().active).to.equal(true);
+  });
+}

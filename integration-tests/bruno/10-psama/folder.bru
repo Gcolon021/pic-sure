@@ -1,0 +1,20 @@
+meta {
+  name: 10-psama
+}
+
+script:pre-request {
+  const seed = bru.getEnvVar("sessionToken");
+  const secret = bru.getEnvVar("psamaClientSecret");
+  if (seed && secret) {
+    const crypto = require("crypto");
+    const b64u = (buf) => Buffer.from(buf).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const parts = seed.split(".");
+    const payload = JSON.parse(Buffer.from(parts[1], "base64").toString());
+    const now = Math.floor(Date.now() / 1000);
+    payload.iat = now;
+    payload.exp = now + 3300;
+    const p2 = b64u(JSON.stringify(payload));
+    const sig = b64u(crypto.createHmac("sha512", secret).update(parts[0] + "." + p2).digest());
+    bru.setVar("sessionToken", parts[0] + "." + p2 + "." + sig);
+  }
+}

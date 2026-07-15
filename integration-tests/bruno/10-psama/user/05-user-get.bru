@@ -1,0 +1,33 @@
+meta {
+  name: user-get
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/psama/user/{{psamaUserUuid}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("sessionToken") && !bru.getEnvVar("sessionToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("returns the requested user", function () {
+    const b = res.getBody();
+    const u = b.content !== undefined ? b.content : b;
+    expect((Array.isArray(u) ? u[0] : u).uuid).to.equal(bru.getVar("psamaUserUuid"));
+  });
+}

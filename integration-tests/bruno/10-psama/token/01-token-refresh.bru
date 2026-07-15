@@ -1,0 +1,26 @@
+meta {
+  name: token-refresh
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/psama/token/refresh
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("sessionToken") && !bru.getEnvVar("sessionToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.token: isDefined
+}

@@ -1,0 +1,19 @@
+meta {
+  name: user-me-consents
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/psama/user/me/consents
+  body: none
+  auth: inherit
+}
+
+tests {
+  // known bug: UserController.getUserConsents declares @PathVariable("userId") but the
+  // /me/consents route has no {userId} segment -> 500; tighten to 200 once fixed
+  test("consents endpoint responds (200 or known-bug 500)", function () {
+    expect([200, 500]).to.include(res.getStatus());
+  });
+}

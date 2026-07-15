@@ -1,0 +1,20 @@
+meta {
+  name: user-me
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/psama/user/me?hasToken
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+  res.body.email: isDefined
+}
+
+script:post-response {
+  bru.setVar("psamaUserUuid", res.body.uuid);
+}

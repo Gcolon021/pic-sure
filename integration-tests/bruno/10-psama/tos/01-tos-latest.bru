@@ -1,0 +1,28 @@
+meta {
+  name: tos-latest
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/psama/tos/latest
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:pre-request {
+  if (!bru.getVar("sessionToken") && !bru.getEnvVar("sessionToken")) {
+    bru.runner.skipRequest();
+  }
+}
+
+tests {
+  // TOS not seeded in AIO: accept 200 (a TOS row exists) or 404 (none seeded).
+  test("tos latest is available or not seeded", function () {
+    expect([200, 404]).to.include(res.getStatus());
+  });
+}
