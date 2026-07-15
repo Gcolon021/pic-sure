@@ -1,0 +1,20 @@
+meta {
+  name: 02-user-me
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/psama/user/me
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+  res.body.email: isDefined
+}
+
+script:post-response {
+  bru.setVar("smokeUserEmail", res.body.email);
+}
