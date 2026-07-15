@@ -1,0 +1,17 @@
+meta {
+  name: 06-delete
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/picsure/operations/dataset/named/{{brunoDatasetId}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("named dataset is deleted", function () {
+    expect([200, 204]).to.include(res.getStatus());
+  });
+}

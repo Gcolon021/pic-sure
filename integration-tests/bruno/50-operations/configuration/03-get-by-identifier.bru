@@ -1,0 +1,15 @@
+meta {
+  name: 03-get-by-identifier
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/picsure/operations/configuration/bruno-test-config
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}

@@ -1,0 +1,21 @@
+meta {
+  name: 05-delete-admin
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/picsure/operations/configuration/admin/{{brunoConfigUuid}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+tests {
+  test("configuration is deleted", function () {
+    expect([200, 204]).to.include(res.getStatus());
+  });
+}

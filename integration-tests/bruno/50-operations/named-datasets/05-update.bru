@@ -1,0 +1,19 @@
+meta {
+  name: 05-update
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/picsure/operations/dataset/named/{{brunoDatasetId}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  { "queryId": "{{opsQueryId}}", "name": "bruno-test-dataset", "archived": true, "metadata": {} }
+}
+
+assert {
+  res.status: eq 200
+}

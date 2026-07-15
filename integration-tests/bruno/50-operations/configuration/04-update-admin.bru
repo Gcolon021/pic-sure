@@ -1,0 +1,23 @@
+meta {
+  name: 04-update-admin
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/picsure/operations/configuration/admin/{{brunoConfigUuid}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  { "description": "updated by bruno integration suite" }
+}
+
+assert {
+  res.status: eq 200
+}

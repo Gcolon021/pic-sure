@@ -1,0 +1,30 @@
+meta {
+  name: 02-create-admin
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/picsure/operations/configuration/admin
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  { "name": "bruno-test-config", "kind": "BRUNO_TEST", "value": "test-value", "description": "created by bruno integration suite" }
+}
+
+script:post-response {
+  const b = res.body;
+  bru.setVar("brunoConfigUuid", b.uuid || b.id);
+}
+
+tests {
+  test("configuration is created", function () {
+    expect([200, 201]).to.include(res.getStatus());
+  });
+}

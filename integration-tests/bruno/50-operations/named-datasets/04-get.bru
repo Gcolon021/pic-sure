@@ -1,0 +1,15 @@
+meta {
+  name: 04-get
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/picsure/operations/dataset/named/{{brunoDatasetId}}
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+}

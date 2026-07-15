@@ -1,0 +1,15 @@
+meta {
+  name: 03-list
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/picsure/operations/dataset/named
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+}
