@@ -1,0 +1,15 @@
+meta {
+  name: 08-query-metadata
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/picsure/hpds/auth/v3/query/{{hpdsQueryId}}/metadata
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+}

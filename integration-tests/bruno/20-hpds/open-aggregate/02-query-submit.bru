@@ -1,0 +1,33 @@
+meta {
+  name: open-02-query-submit
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/picsure/hpds/open/v3/query
+  body: json
+  auth: none
+}
+
+script:pre-request {
+  // Open-access requires local stack GATEWAY_OPEN_ACCESS_ENABLED=true; also gated
+  // here so this request is a documented no-op when the flag is off.
+  if (bru.getEnvVar("openAccessEnabled") !== "true") { bru.runner.skipRequest(); }
+}
+
+body:json {
+  {
+    "query": {
+      "select": [],
+      "authorizationFilters": [],
+      "phenotypicClause": null,
+      "genomicFilters": [],
+      "expectedResultType": "COUNT"
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+}

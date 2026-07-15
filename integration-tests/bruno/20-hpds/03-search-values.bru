@@ -1,0 +1,22 @@
+meta {
+  name: 03-search-values
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/picsure/hpds/auth/v3/search/values?query={{testSearchTerm}}&page=1&size=10
+  body: none
+  auth: inherit
+}
+
+docs {
+  page is 1-indexed downstream: HPDS's PicSureService.searchGenomicConceptValues
+  throws IllegalArgumentException("Page must be greater than 0") for page=0,
+  surfaced by the query-service as a 502 (HpdsCommunicationException). Unlike
+  the dictionary's 0-indexed page_number, this endpoint requires page >= 1.
+}
+
+assert {
+  res.status: eq 200
+}

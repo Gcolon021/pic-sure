@@ -1,0 +1,37 @@
+meta {
+  name: 09-query-signed-url
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/picsure/hpds/auth/v3/query/{{hpdsQueryId}}/signed-url
+  body: json
+  auth: inherit
+}
+
+script:pre-request {
+  // S3 signing is not configured in a default AIO stack; skip unless opted in.
+  if (bru.getEnvVar("signedUrlEnabled") !== "true") { bru.runner.skipRequest(); }
+  const p = bru.getEnvVar("testConceptPath") || bru.getVar("discoveredConceptPath") || bru.getVar("dictConceptPath");
+  if (!p) { bru.runner.skipRequest(); }
+  // JSON-escape backslashes: concept paths look like \Nhanes\SUBJECT_ID\ and are
+  // interpolated inside a body:json string literal.
+  bru.setVar("asyncConceptPath", String(p).replace(/\\/g, "\\\\"));
+}
+
+body:json {
+  {
+    "query": {
+      "select": ["{{asyncConceptPath}}"],
+      "authorizationFilters": [],
+      "phenotypicClause": null,
+      "genomicFilters": [],
+      "expectedResultType": "DATAFRAME"
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+}

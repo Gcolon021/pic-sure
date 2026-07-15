@@ -1,0 +1,19 @@
+meta {
+  name: 02-search-v3
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/picsure/hpds/auth/v3/search
+  body: json
+  auth: inherit
+}
+
+body:json {
+  { "query": "{{testSearchTerm}}" }
+}
+
+assert {
+  res.status: eq 200
+}

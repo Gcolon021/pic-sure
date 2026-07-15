@@ -1,0 +1,48 @@
+meta {
+  name: 05-query-submit
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/picsure/hpds/auth/v3/query
+  body: json
+  auth: inherit
+}
+
+script:pre-request {
+  const p = bru.getEnvVar("testConceptPath") || bru.getVar("discoveredConceptPath") || bru.getVar("dictConceptPath");
+  if (!p) { bru.runner.skipRequest(); }
+  // JSON-escape backslashes: concept paths look like \Nhanes\SUBJECT_ID\ and are
+  // interpolated inside a body:json string literal.
+  bru.setVar("asyncConceptPath", String(p).replace(/\\/g, "\\\\"));
+}
+
+body:json {
+  {
+    "query": {
+      "select": ["{{asyncConceptPath}}"],
+      "authorizationFilters": [],
+      "phenotypicClause": null,
+      "genomicFilters": [],
+      "expectedResultType": "DATAFRAME"
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:post-response {
+  const b = res.body;
+  bru.setVar("hpdsQueryId", b.picsureResultId || b.uuid || b.id);
+  bru.setVar("hpdsStatusAttempts", 0);
+}
+
+tests {
+  test("returns a query id", function () {
+    const b = res.getBody();
+    expect(b.picsureResultId || b.uuid || b.id).to.be.a("string");
+  });
+}

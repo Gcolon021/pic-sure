@@ -1,0 +1,55 @@
+meta {
+  name: 06-query-status
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/picsure/hpds/auth/v3/query/{{hpdsQueryId}}/status
+  body: json
+  auth: inherit
+}
+
+script:pre-request {
+  const p = bru.getEnvVar("testConceptPath") || bru.getVar("discoveredConceptPath") || bru.getVar("dictConceptPath");
+  if (!p) { bru.runner.skipRequest(); }
+  // JSON-escape backslashes: concept paths look like \Nhanes\SUBJECT_ID\ and are
+  // interpolated inside a body:json string literal.
+  bru.setVar("asyncConceptPath", String(p).replace(/\\/g, "\\\\"));
+}
+
+body:json {
+  {
+    "query": {
+      "select": ["{{asyncConceptPath}}"],
+      "authorizationFilters": [],
+      "phenotypicClause": null,
+      "genomicFilters": [],
+      "expectedResultType": "DATAFRAME"
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:post-response {
+  const s = (res.body && res.body.status) || "";
+  const attempts = Number(bru.getVar("hpdsStatusAttempts") || 0);
+  const pending = ["PENDING", "QUEUED", "RUNNING", "STARTED"].includes(s);
+  if (pending && attempts < 15) {
+    bru.setVar("hpdsStatusAttempts", attempts + 1);
+    await new Promise(function (r) { setTimeout(r, 2000); });
+    bru.setNextRequest("06-query-status");
+  }
+}
+
+tests {
+  test("query reached a successful terminal state", function () {
+    const s = res.getBody().status;
+    const attempts = Number(bru.getVar("hpdsStatusAttempts") || 0);
+    if (["PENDING", "QUEUED", "RUNNING", "STARTED"].includes(s) && attempts < 15) return; // still polling
+    expect(["AVAILABLE", "SUCCESS", "COMPLETED"]).to.include(s);
+  });
+}
