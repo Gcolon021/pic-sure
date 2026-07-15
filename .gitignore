@@ -36,3 +36,5 @@ docs/superpowers/
 # TODO: Remove once development is complete
 george_development_notes.md
 fable-master-handoff.md
+
+integration-tests/bruno/.env
