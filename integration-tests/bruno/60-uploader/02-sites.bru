@@ -1,0 +1,21 @@
+meta {
+  name: 02-sites
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/picsure/uploader/sites
+  body: none
+  auth: inherit
+}
+
+script:pre-request {
+  if (bru.getEnvVar("uploaderEnabled") !== "true") {
+    bru.runner.skipRequest();
+  }
+}
+
+assert {
+  res.status: eq 200
+}

@@ -1,0 +1,21 @@
+meta {
+  name: 01-status-server
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/picsure/uploader/status/server
+  body: none
+  auth: inherit
+}
+
+script:pre-request {
+  if (bru.getEnvVar("uploaderEnabled") !== "true") {
+    bru.runner.skipRequest();
+  }
+}
+
+assert {
+  res.status: eq 200
+}
