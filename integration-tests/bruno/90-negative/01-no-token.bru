@@ -55,11 +55,15 @@ docs {
 }
 
 tests {
-  // known bug (suspected build/deploy skew, not current source intent): a genuinely
-  // tokenless /picsure/** request is unconditionally granted by OpenAccessFilter on
-  // this stack (MANUAL_ROLE_OPEN_ACCESS has zero access rules), so 401 is not
-  // reachable here. Asserting the actual, honest contract for this stack config.
-  test("tokenless request to an open-access-covered route is granted, not rejected", function () {
-    expect(res.getStatus()).to.equal(200);
-  });
+  // Branch on openAccessEnabled: when open access is on, OpenAccessFilter grants
+  // tokenless requests (see docs above); otherwise a missing token should be rejected.
+  if (bru.getEnvVar("openAccessEnabled") === "true") {
+    test("tokenless request to an open-access-covered route is granted, not rejected", function () {
+      expect(res.getStatus()).to.equal(200);
+    });
+  } else {
+    test("tokenless request is rejected with missing_token 401", function () {
+      expect(res.getStatus()).to.equal(401);
+    });
+  }
 }

@@ -14,7 +14,7 @@ script:pre-request {
   // S3 signing is not configured in a default AIO stack; skip unless opted in.
   if (bru.getEnvVar("signedUrlEnabled") !== "true") { bru.runner.skipRequest(); }
   const p = bru.getEnvVar("testConceptPath") || bru.getVar("discoveredConceptPath") || bru.getVar("dictConceptPath");
-  if (!p) { bru.runner.skipRequest(); }
+  if (!p) { bru.runner.skipRequest(); return; }
   // JSON-escape backslashes: concept paths look like \Nhanes\SUBJECT_ID\ and are
   // interpolated inside a body:json string literal.
   bru.setVar("asyncConceptPath", String(p).replace(/\\/g, "\\\\"));

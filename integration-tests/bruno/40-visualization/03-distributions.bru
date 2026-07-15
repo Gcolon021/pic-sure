@@ -12,7 +12,7 @@ post {
 
 script:pre-request {
   const p = bru.getEnvVar("testConceptPath") || bru.getVar("dictConceptPath") || bru.getVar("discoveredConceptPath");
-  if (!p) { bru.runner.skipRequest(); }
+  if (!p) { bru.runner.skipRequest(); return; }
   // JSON-escape backslashes/quotes: concept paths look like \Nhanes\SUBJECT_ID\ and are
   // interpolated inside a body:json string literal (same approach as 20-hpds/05-query-submit.bru).
   bru.setVar("vizConceptPath", JSON.stringify(String(p)).slice(1, -1));

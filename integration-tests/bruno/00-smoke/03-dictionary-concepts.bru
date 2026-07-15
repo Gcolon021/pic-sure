@@ -23,7 +23,6 @@ script:post-response {
   const first = res.body.content && res.body.content[0];
   if (first) {
     bru.setVar("discoveredConceptPath", first.conceptPath);
-    bru.setVar("discoveredDataset", first.dataset);
   }
 }
 

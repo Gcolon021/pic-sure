@@ -14,7 +14,3 @@ assert {
   res.status: eq 200
   res.body.email: isDefined
 }
-
-script:post-response {
-  bru.setVar("smokeUserEmail", res.body.email);
-}
