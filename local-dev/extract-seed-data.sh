@@ -55,6 +55,12 @@ cp "$DOCKER_CONFIG_DIR/psama/application.truststore" config/psama/application.tr
 cp -R "$DOCKER_CONFIG_DIR/psama/emailTemplates"      config/psama/emailTemplates
 
 echo "==> Copying dictionary-dump application.properties"
-cp "$DOCKER_CONFIG_DIR/dictionary/dump/application.properties" config/dictionary/application.properties
+if [ -f "$DOCKER_CONFIG_DIR/dictionary/dump/application.properties" ]; then
+  cp "$DOCKER_CONFIG_DIR/dictionary/dump/application.properties" config/dictionary/application.properties
+else
+  echo "WARN: no real application.properties at $DOCKER_CONFIG_DIR/dictionary/dump/" >&2
+  echo "WARN: (empty bind-mount directory artifact seen on some AIO installs) — creating empty placeholder." >&2
+  : > config/dictionary/application.properties
+fi
 
 echo "Done. seed/ and config/ are populated (gitignored — never commit them)."
