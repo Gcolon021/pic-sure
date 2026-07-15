@@ -26,10 +26,14 @@ AUTH_PW=$(grep -E '^DATASOURCE_PASSWORD=' "$DOCKER_CONFIG_DIR/psama/psama.env" |
 PICSURE_PW=$(grep -E '^SPRING_DATASOURCE_PASSWORD=' "$DOCKER_CONFIG_DIR/operations/operations.env" | head -1 | cut -d= -f2-)
 [ -n "$AUTH_PW" ] || { echo "ERROR: DATASOURCE_PASSWORD not found in psama.env" >&2; exit 1; }
 [ -n "$PICSURE_PW" ] || { echo "ERROR: SPRING_DATASOURCE_PASSWORD not found in operations.env" >&2; exit 1; }
+# Escape for use inside MySQL single-quoted string literals: backslashes first, then quotes.
+sql_escape() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e "s/'/\\\\'/g"; }
+AUTH_PW_SQL=$(sql_escape "$AUTH_PW")
+PICSURE_PW_SQL=$(sql_escape "$PICSURE_PW")
 cat > seed/mysql/20-users.sql <<SQL
-CREATE USER IF NOT EXISTS 'auth'@'%' IDENTIFIED BY '${AUTH_PW}';
+CREATE USER IF NOT EXISTS 'auth'@'%' IDENTIFIED BY '${AUTH_PW_SQL}';
 GRANT ALL PRIVILEGES ON auth.* TO 'auth'@'%';
-CREATE USER IF NOT EXISTS 'picsure'@'%' IDENTIFIED BY '${PICSURE_PW}';
+CREATE USER IF NOT EXISTS 'picsure'@'%' IDENTIFIED BY '${PICSURE_PW_SQL}';
 GRANT ALL PRIVILEGES ON picsure.* TO 'picsure'@'%';
 FLUSH PRIVILEGES;
 SQL
