@@ -44,7 +44,13 @@ services:
     ports:
       - "${POSTGRES_HOST_PORT:-5433}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U picsure -d dictionary"]
+      # -h 127.0.0.1 forces pg_isready over TCP instead of the default unix
+      # socket. The unix socket comes up during the entrypoint's brief internal
+      # init phase (before the seed dump has actually loaded and before TCP is
+      # listening), so a socket-based check reports healthy too early; forcing
+      # TCP makes this wait for the same "actually ready" signal the MySQL
+      # healthcheck (also 127.0.0.1) waits for.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U picsure -d dictionary"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -95,7 +101,7 @@ services:
       dockerfile: docker/pic-sure-hpds/Dockerfile
     env_file: ./config/hpds.env
     volumes:
-      - ./seed/hpds:/opt/local/hpds
+      - ./seed/hpds:/opt/local/hpds:ro
       - gic-query-results:/gic_query_results
     restart: unless-stopped
     networks: [picsure-local]

@@ -8,8 +8,11 @@ source and seeded with data extracted from a local all-in-one (AIO) install.
 1. `export DOCKER_CONFIG_DIR=/path/to/local-all-in-one` (AIO must be running)
 2. `./extract-seed-data.sh`   # one-time: dump DBs + copy config from the AIO
 3. `./build.sh`               # mvn package + docker compose build
-4. `docker compose up -d`
-5. `curl -s http://localhost:8081/actuator/health`
+4. (optional) `cp .env.example .env` and edit if you need non-default host
+   ports or a different `MYSQL_ROOT_PASSWORD` — compose reads `.env`
+   automatically, so no extra flags are needed
+5. `docker compose up -d`
+6. `curl -s http://localhost:8081/actuator/health`
 
 ## What you get
 
@@ -105,7 +108,12 @@ token-based API calls need no Auth0 changes.
   `localhost` to `::1` (IPv6), but the services only listen on IPv4, which
   makes the healthcheck fail with "connection refused" even though the
   service is up. The compose file's healthcheck commands already use
-  `127.0.0.1` for this reason — keep that if you touch them.
+  `127.0.0.1` for this reason — keep that if you touch them. The `mysqladmin`
+  and `pg_isready` healthchecks for `picsure-db` / `dictionary-db` also force
+  `-h 127.0.0.1` for a related reason: without it they'd default to a unix
+  socket, which comes up during the entrypoint's brief init phase — before
+  the seed dump has actually loaded — and would report false-healthy too
+  early.
 - **HPDS OOM on boot**: if HPDS is seeded from an AIO with a large heap
   requirement, `extract-seed-data.sh` rewrites `-Xmx16g` down to `-Xmx4g` in
   `config/hpds.env` at copy time so it fits alongside a coexisting AIO on a
@@ -114,6 +122,12 @@ token-based API calls need no Auth0 changes.
 - **Port already in use**: this stack uses 8081/8091/8082/3307/5433 by
   default to avoid clashing with an AIO on its usual ports; override with the
   `*_HOST_PORT` env vars in docker-compose.yml if you still collide with
-  something else on your machine.
+  something else on your machine. Mechanism: `cp .env.example .env`, then edit
+  the `*_HOST_PORT` values in `.env` — docker compose loads `.env` from this
+  directory automatically and it overrides the `:-default` fallback baked
+  into each `ports:` entry. If you change `API_PROXY_HOST_PORT` away from its
+  `8082` default, also update `baseUrl` in
+  `integration-tests/bruno/environments/compose-local.bru` to match, or the
+  Bruno suite will keep hitting the old port.
 - **Frontend container port 8443**: pick any free host port; 443 is likely
   taken by a running AIO's `httpd` container.

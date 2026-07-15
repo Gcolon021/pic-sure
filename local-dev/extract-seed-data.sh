@@ -22,8 +22,8 @@ docker exec picsure-db sh -c \
   > seed/mysql/10-data.sql
 
 echo "==> Generating MySQL application users"
-AUTH_PW=$(grep -E '^DATASOURCE_PASSWORD=' "$DOCKER_CONFIG_DIR/psama/psama.env" | head -1 | cut -d= -f2-)
-PICSURE_PW=$(grep -E '^SPRING_DATASOURCE_PASSWORD=' "$DOCKER_CONFIG_DIR/operations/operations.env" | head -1 | cut -d= -f2-)
+AUTH_PW=$(grep -E '^DATASOURCE_PASSWORD=' "$DOCKER_CONFIG_DIR/psama/psama.env" | head -1 | cut -d= -f2- || true)
+PICSURE_PW=$(grep -E '^SPRING_DATASOURCE_PASSWORD=' "$DOCKER_CONFIG_DIR/operations/operations.env" | head -1 | cut -d= -f2- || true)
 [ -n "$AUTH_PW" ] || { echo "ERROR: DATASOURCE_PASSWORD not found in psama.env" >&2; exit 1; }
 [ -n "$PICSURE_PW" ] || { echo "ERROR: SPRING_DATASOURCE_PASSWORD not found in operations.env" >&2; exit 1; }
 # Escape for use inside MySQL single-quoted string literals: backslashes first, then quotes.
@@ -52,6 +52,7 @@ cp "$DOCKER_CONFIG_DIR/operations/operations.env"        config/operations.env
 cp "$DOCKER_CONFIG_DIR/logging/logging.env"              config/logging.env
 cp "$DOCKER_CONFIG_DIR/hpds/hpds.env"                    config/hpds.env
 cp "$DOCKER_CONFIG_DIR/dictionary/dictionary.env"        config/dictionary.env
+cp "$DOCKER_CONFIG_DIR/psama/psama.env"                  config/psama.env
 
 # The AIO's hpds.env requests -Xmx16g, sized for a production host. On a laptop
 # Docker VM (~16GB) that heap can't fit — especially alongside the coexisting AIO
@@ -59,10 +60,16 @@ cp "$DOCKER_CONFIG_DIR/dictionary/dictionary.env"        config/dictionary.env
 # heap at extraction time (kept in the script so a clean-slate re-extract preserves
 # it). Override with LOCAL_HPDS_XMX if you have more memory to spare.
 LOCAL_HPDS_XMX="${LOCAL_HPDS_XMX:-4g}"
+BEFORE_XMX=$(grep -oE -- '-Xmx[0-9]+[gGmM]' config/hpds.env | head -1 || true)
 sed -i.bak -E "s/-Xmx[0-9]+[gGmM]/-Xmx${LOCAL_HPDS_XMX}/" config/hpds.env
 rm -f config/hpds.env.bak
-echo "==> Rewrote HPDS heap to -Xmx${LOCAL_HPDS_XMX} for local dev (was -Xmx16g)"
-cp "$DOCKER_CONFIG_DIR/psama/psama.env"                  config/psama.env
+if [ -n "$BEFORE_XMX" ] && [ "$BEFORE_XMX" != "-Xmx${LOCAL_HPDS_XMX}" ]; then
+  echo "==> Rewrote HPDS heap to -Xmx${LOCAL_HPDS_XMX} for local dev (was ${BEFORE_XMX})"
+elif [ -n "$BEFORE_XMX" ]; then
+  echo "==> HPDS heap already -Xmx${LOCAL_HPDS_XMX} for local dev (no change needed)"
+else
+  echo "==> No -Xmx setting found in hpds.env to rewrite; leaving as extracted"
+fi
 
 echo "==> Copying PSAMA truststore + email templates"
 cp "$DOCKER_CONFIG_DIR/psama/application.truststore" config/psama/application.truststore
