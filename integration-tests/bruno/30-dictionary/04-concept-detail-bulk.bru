@@ -1,0 +1,26 @@
+meta {
+  name: 04-concept-detail-bulk
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/picsure/dictionary/concepts/detail
+  body: json
+  auth: inherit
+}
+
+script:pre-request {
+  // JSON-escape backslashes: concept paths look like \Nhanes\SUBJECT_ID\ and are
+  // interpolated inside a body:json string literal (see 00-smoke/06-query-submit.bru).
+  const p = bru.getVar("dictConceptPath") || "";
+  bru.setVar("dictConceptPathEscaped", String(p).replace(/\\/g, "\\\\"));
+}
+
+body:json {
+  [ "{{dictConceptPathEscaped}}" ]
+}
+
+assert {
+  res.status: eq 200
+}

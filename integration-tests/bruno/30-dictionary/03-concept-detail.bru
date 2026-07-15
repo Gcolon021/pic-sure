@@ -1,0 +1,30 @@
+meta {
+  name: 03-concept-detail
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/picsure/dictionary/concepts/detail/{{dictDataset}}
+  body: text
+  auth: inherit
+}
+
+body:text {
+  {{dictConceptPath}}
+}
+
+docs {
+  ConceptController#conceptDetail binds @RequestBody() String conceptPath, read by
+  Spring's StringHttpMessageConverter regardless of declared content type (verified
+  against the live service with both text/plain and application/json). We don't
+  set an explicit Content-Type: application/json header here: the bru CLI
+  JSON-encodes a `body: text` payload (quoting it and doubling backslashes) whenever
+  the Content-Type header is overridden to application/json, which corrupts the raw
+  concept path and made the live endpoint 404. Bruno's default text/plain
+  Content-Type for body:text sends the path unmodified and the endpoint accepts it.
+}
+
+assert {
+  res.status: eq 200
+}

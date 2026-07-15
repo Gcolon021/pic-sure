@@ -1,0 +1,15 @@
+meta {
+  name: 10-dashboard
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/picsure/dictionary/dashboard
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+}

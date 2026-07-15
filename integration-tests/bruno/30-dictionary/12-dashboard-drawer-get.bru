@@ -1,0 +1,19 @@
+meta {
+  name: 12-dashboard-drawer-get
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/picsure/dictionary/dashboard-drawer/{{dictDrawerId}}
+  body: none
+  auth: inherit
+}
+
+script:pre-request {
+  if (!bru.getVar("dictDrawerId")) { bru.runner.skipRequest(); }
+}
+
+assert {
+  res.status: eq 200
+}

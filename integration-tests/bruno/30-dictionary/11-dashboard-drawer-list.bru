@@ -1,0 +1,22 @@
+meta {
+  name: 11-dashboard-drawer-list
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/picsure/dictionary/dashboard-drawer
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:post-response {
+  const first = res.body && res.body[0];
+  if (first) {
+    bru.setVar("dictDrawerId", first.datasetId || first.id);
+  }
+}

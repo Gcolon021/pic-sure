@@ -1,0 +1,31 @@
+meta {
+  name: 14-legacy-search
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/picsure/dictionary/search
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "query": { "searchTerm": "{{testSearchTerm}}", "limit": 10 }
+  }
+}
+
+docs {
+  Parameter fix, source-verified: LegacySearchQueryMapper.mapFromJson reads a
+  top-level "query" node with "searchTerm" and "limit" fields
+  (rootNode.get("query").get("searchTerm")/.get("limit")) — it does not accept the
+  Filter/Pageable record shape ({filter, pageable}) the record's own field names
+  might suggest. Confirmed live: {filter,pageable} 500s with a NullPointerException
+  ("queryNode" is null) since rootNode.get("query") returns null; {query:
+  {searchTerm, limit}} succeeds.
+}
+
+assert {
+  res.status: eq 200
+}

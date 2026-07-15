@@ -1,0 +1,29 @@
+meta {
+  name: 06-concept-hierarchy
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/picsure/dictionary/concepts/hierarchy/{{dictDataset}}
+  body: text
+  auth: inherit
+}
+
+body:text {
+  {{dictConceptPath}}
+}
+
+docs {
+  Same body-encoding adjustment as 03-concept-detail.bru: no explicit
+  Content-Type: application/json header. ConceptController#conceptHierarchy binds
+  @RequestBody() String conceptPath via StringHttpMessageConverter regardless of
+  declared content type; the bru CLI JSON-encodes body:text payloads (quoting +
+  doubling backslashes) when Content-Type is overridden to application/json, which
+  corrupted the raw concept path and 404'd against the live service. Default
+  text/plain sends the path unmodified.
+}
+
+assert {
+  res.status: eq 200
+}
