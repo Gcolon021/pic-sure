@@ -1,0 +1,175 @@
+# PIC-SURE local dev stack. Coexists with a running all-in-one:
+# own project name, own attachable network, no container_name, unique host ports.
+# Service names deliberately mirror AIO DNS names so the env files extracted by
+# extract-seed-data.sh work verbatim, and an external frontend can attach to the
+# picsure-local network and resolve gateway/psama exactly as it does in the AIO.
+name: picsure-local
+
+networks:
+  picsure-local:
+    name: picsure-local
+    attachable: true
+
+volumes:
+  picsure-db-data:
+  dictionary-db-data:
+  gic-query-results:
+
+services:
+  picsure-db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-picsure-local-root}
+    volumes:
+      - picsure-db-data:/var/lib/mysql
+      - ./seed/mysql:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "${MYSQL_HOST_PORT:-3307}:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
+    networks: [picsure-local]
+
+  dictionary-db:
+    image: postgres:16-alpine
+    # dictionary.env supplies POSTGRES_USER/POSTGRES_PASSWORD/POSTGRES_DB, so the
+    # recreated user matches what dictionary-api and dictionary-dump connect with.
+    env_file: ./config/dictionary.env
+    volumes:
+      - dictionary-db-data:/var/lib/postgresql/data
+      - ./seed/postgres:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U picsure -d dictionary"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks: [picsure-local]
+
+  psama:
+    build:
+      context: ../services/pic-sure-auth-microapp
+      dockerfile: pic-sure-auth-services/Dockerfile
+    env_file: ./config/psama.env
+    volumes:
+      - ./config/psama/emailTemplates:/opt/jboss/wildfly/standalone/configuration/emailTemplates:ro
+      - ./config/psama/application.truststore:/usr/local/tomcat/conf/application.truststore:ro
+    ports:
+      - "${PSAMA_HOST_PORT:-8091}:8090"
+    depends_on:
+      picsure-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:8090/auth/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    restart: unless-stopped
+    networks: [picsure-local]
+
+  gateway:
+    build:
+      context: ../services/pic-sure-gateway
+    env_file: ./config/gateway.env
+    ports:
+      - "${GATEWAY_HOST_PORT:-8081}:8080"
+    depends_on:
+      psama:
+        condition: service_healthy
+      pic-sure-logging:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [picsure-local]
+
+  hpds:
+    build:
+      context: ../services/pic-sure-hpds
+      dockerfile: docker/pic-sure-hpds/Dockerfile
+    env_file: ./config/hpds.env
+    volumes:
+      - ./seed/hpds:/opt/local/hpds
+      - gic-query-results:/gic_query_results
+    restart: unless-stopped
+    networks: [picsure-local]
+
+  pic-sure-hpds-query-service:
+    build:
+      context: ../services/pic-sure-hpds-query-service
+    env_file: ./config/query.env
+    depends_on:
+      - hpds
+      - pic-sure-operations-service
+    restart: unless-stopped
+    networks: [picsure-local]
+
+  visualization:
+    build:
+      context: ../services/pic-sure-visualization-service
+    env_file: ./config/visualization.env
+    restart: unless-stopped
+    networks: [picsure-local]
+
+  dictionary-api:
+    build:
+      context: ../services/picsure-dictionary
+    env_file: ./config/dictionary.env
+    depends_on:
+      dictionary-db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [picsure-local]
+
+  dictionary-dump:
+    # Not built from this repo — reuses the image the AIO runs.
+    image: avillach/dictionary-dump:latest
+    env_file: ./config/dictionary.env
+    volumes:
+      - ./config/dictionary/application.properties:/application.properties:ro
+    depends_on:
+      dictionary-db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [picsure-local]
+
+  pic-sure-operations-service:
+    build:
+      context: ../services/pic-sure-operations-service
+    env_file: ./config/operations.env
+    depends_on:
+      picsure-db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [picsure-local]
+
+  pic-sure-logging:
+    build:
+      context: ../services/pic-sure-logging
+    env_file: ./config/logging.env
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:80/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+    restart: unless-stopped
+    networks: [picsure-local]
+
+  api-proxy:
+    # Mirrors the frontend httpd's /picsure + /psama rewrites so the Bruno suite
+    # and other AIO-shaped clients work against this stack without a frontend.
+    image: nginx:alpine
+    volumes:
+      - ./api-proxy/default.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "${API_PROXY_HOST_PORT:-8082}:80"
+    depends_on:
+      - gateway
+      - psama
+    restart: unless-stopped
+    networks: [picsure-local]
