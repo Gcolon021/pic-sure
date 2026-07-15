@@ -52,6 +52,16 @@ cp "$DOCKER_CONFIG_DIR/operations/operations.env"        config/operations.env
 cp "$DOCKER_CONFIG_DIR/logging/logging.env"              config/logging.env
 cp "$DOCKER_CONFIG_DIR/hpds/hpds.env"                    config/hpds.env
 cp "$DOCKER_CONFIG_DIR/dictionary/dictionary.env"        config/dictionary.env
+
+# The AIO's hpds.env requests -Xmx16g, sized for a production host. On a laptop
+# Docker VM (~16GB) that heap can't fit — especially alongside the coexisting AIO
+# hpds — so HPDS gets OOM-killed on boot. Rewrite the copied env to a laptop-safe
+# heap at extraction time (kept in the script so a clean-slate re-extract preserves
+# it). Override with LOCAL_HPDS_XMX if you have more memory to spare.
+LOCAL_HPDS_XMX="${LOCAL_HPDS_XMX:-4g}"
+sed -i.bak -E "s/-Xmx[0-9]+[gGmM]/-Xmx${LOCAL_HPDS_XMX}/" config/hpds.env
+rm -f config/hpds.env.bak
+echo "==> Rewrote HPDS heap to -Xmx${LOCAL_HPDS_XMX} for local dev (was -Xmx16g)"
 cp "$DOCKER_CONFIG_DIR/psama/psama.env"                  config/psama.env
 
 echo "==> Copying PSAMA truststore + email templates"
