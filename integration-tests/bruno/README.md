@@ -177,13 +177,15 @@ is written into the collection directory and is gitignored — do not commit it.
 - **401/400 on `10-psama/*` in general** — the pasted `PICSURE_SESSION_TOKEN` is
   stale and `PSAMA_CLIENT_SECRET` isn't set (so auto-mint can't run); paste a fresh
   session token or set the secret.
-- **`10-psama/token/01-token-refresh` 400s with "Your session has expired"
+- **`10-psama/token/01-token-refresh` returns 400 "Your session has expired"
   even though other `10-psama` requests pass** — the underlying PSAMA login
   session (an in-memory, per-process cache, independent of the JWT's own `exp`)
   was lost, most likely because the `psama` container restarted after you
   captured `PICSURE_SESSION_TOKEN`. Auto-mint re-signs the JWT but cannot restore
-  that cache entry. Re-paste a session token captured after the current `psama`
-  process started.
+  that cache entry. The request treats this as a documented environmental
+  dependency and accepts `[200, 400]` (asserting a fresh token in the body on
+  the 200 path), so it won't fail the run; to exercise the positive path,
+  re-paste a session token captured after the current `psama` process started.
 - **Every `10-psama/*` request errors identically** — you forgot
   `--sandbox developer`; the folder's pre-request script needs `require("crypto")`.
 - **Empty dictionary results** — the stack's data hasn't been loaded/seeded yet.
