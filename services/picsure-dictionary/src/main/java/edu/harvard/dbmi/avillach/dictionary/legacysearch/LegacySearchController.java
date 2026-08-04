@@ -26,13 +26,17 @@ public class LegacySearchController {
         this.legacySearchService = legacySearchService;
     }
 
-    @AuditEvent(type = "SEARCH", action = "search.execute")
+    // Dashboard-safe parity with the deployed stream: keep this label until the migration in
+    // docs/superpowers/specs/2026-08-04-audit-splunk-parity-design.md and
+    // docs/superpowers/api_contract_followups/audit-label-accuracy.md is complete.
+    @AuditEvent(type = "SEARCH", action = "search.legacy")
     @PostMapping(path = "/search")
     public ResponseEntity<LegacyResponse> legacySearch(
         @RequestBody SearchRequest request, @RequestParam(name = "page_number", defaultValue = "0", required = false) int page,
         @RequestParam(name = "page_size", defaultValue = "10", required = false) int size
     ) {
-        AuditAttributes.putMetadata(httpRequest, "search_term", request.query() != null ? request.query() : "");
+        AuditAttributes
+            .putMetadata(httpRequest, "search_term", LegacySearchService.constructTsQuery(request.query() != null ? request.query() : ""));
         return ResponseEntity.ok(new LegacyResponse(legacySearchService.getSearchResults(request.query(), PageRequest.of(page, size))));
     }
 

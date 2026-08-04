@@ -69,7 +69,9 @@ class ControllerAuditEventTest {
     @Test
     void legacySearchController() throws Exception {
         Class<?> c = LegacySearchController.class;
-        // Aligned with the gateway's route table, which labels POST .../search as search.execute
-        assertAuditEvent(c, "legacySearch", new Class[] {SearchRequest.class, int.class, int.class}, "SEARCH", "search.execute");
+        // Dashboard-safe parity stays at search.legacy until the migration described by
+        // docs/superpowers/specs/2026-08-04-audit-splunk-parity-design.md and
+        // docs/superpowers/api_contract_followups/audit-label-accuracy.md is complete.
+        assertAuditEvent(c, "legacySearch", new Class[] {SearchRequest.class, int.class, int.class}, "SEARCH", "search.legacy");
     }
 }
