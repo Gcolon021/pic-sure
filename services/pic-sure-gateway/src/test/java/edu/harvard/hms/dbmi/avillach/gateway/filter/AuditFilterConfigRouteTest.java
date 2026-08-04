@@ -5,8 +5,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import edu.harvard.hms.dbmi.avillach.commons.audit.AuditRoute;
+import edu.harvard.dbmi.avillach.logging.LoggingClient;
+import edu.harvard.dbmi.avillach.logging.LoggingClientFactory;
 
 /**
  * Pins the gateway audit route table against the surviving HTTP surface. The rows are the single chokepoint where query and search traffic
@@ -30,6 +34,17 @@ class AuditFilterConfigRouteTest {
         assertThat(r).as("no audit route matched %s %s", method, path).isPresent();
         assertThat(r.get().getEventType()).isEqualTo(eventType);
         assertThat(r.get().getAction()).isEqualTo(action);
+    }
+
+    @Test
+    void loggingClientUsesTheLegacyApiClientType() {
+        LoggingClient client = LoggingClient.noOp();
+        try (MockedStatic<LoggingClientFactory> factory = Mockito.mockStatic(LoggingClientFactory.class)) {
+            factory.when(() -> LoggingClientFactory.create("api")).thenReturn(client);
+
+            assertThat(config.loggingClient()).isSameAs(client);
+            factory.verify(() -> LoggingClientFactory.create("api"));
+        }
     }
 
     // --- search: the surviving v3 surface ---

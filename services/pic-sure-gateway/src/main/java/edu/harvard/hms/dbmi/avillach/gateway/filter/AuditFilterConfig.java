@@ -28,7 +28,10 @@ public class AuditFilterConfig {
 
     @Bean
     public LoggingClient loggingClient() {
-        return LoggingClientFactory.create("gateway");
+        // Dashboard-safe parity with the predecessor API stream: keep "api" until the migration in
+        // docs/superpowers/specs/2026-08-04-audit-splunk-parity-design.md and
+        // docs/superpowers/api_contract_followups/audit-label-accuracy.md is complete.
+        return LoggingClientFactory.create("api");
     }
 
     @Bean
